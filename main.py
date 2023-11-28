@@ -1,25 +1,61 @@
+import os
 import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.inception_v3 import InceptionV3, preprocess_input
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.layers import Input, Embedding, LSTM, Dense
+from tensorflow.keras.layers import Input, Embedding, LSTM, Dense, add
+from tensorflow.keras.preprocessing.text import Tokenizer
+
+# Function to load and preprocess an image
+def load_and_preprocess_image(photo_path):
+    photo = image.load_img(photo_path, target_size=(299, 299))
+    photo = image.img_to_array(photo)
+    photo = np.expand_dims(photo, axis=0)
+    return preprocess_input(photo)
+
+# Function to generate captions for a new image
+def generate_caption(model, tokenizer, photo):
+    in_text = 'startseq'
+    max_sequence_length = model.input[1].shape[1]  # Get the max sequence length from the model architecture
+    for i in range(max_sequence_length):
+        sequence = tokenizer.texts_to_sequences([in_text])[0]
+        sequence = pad_sequences([sequence], maxlen=max_sequence_length)
+        yhat = model.predict([photo, sequence], verbose=0)
+        yhat = np.argmax(yhat)
+        word = word_for_id(yhat, tokenizer)
+        if word is None:
+            break
+        in_text += ' ' + word
+        if word == 'endseq':
+            break
+    return in_text
+
+# Helper function to map an integer to a word
+def word_for_id(integer, tokenizer):
+    for word, index in tokenizer.word_index.items():
+        if index == integer:
+            return word
+    return None
+
+# Directory paths
+data_dir = "path/to/your/data/"
+model_dir = "path/to/your/models/"
 
 # Load InceptionV3 pre-trained on ImageNet data
 base_model = InceptionV3(weights='imagenet')
 image_model = Model(inputs=base_model.input, outputs=base_model.layers[-2].output)
 
 # Load the tokenized captions and image features
-# This part assumes you have a preprocessed dataset with captions and corresponding image features
-captions = [...]  # List of tokenized captions
-image_features = [...]  # Extracted image features using InceptionV3
+captions = [['startseq', 'cat', 'on', 'the', 'mat', 'endseq'], ['startseq', 'dog', 'playing', 'in', 'the', 'yard', 'endseq'], ...]
+image_features = np.array([...])  # Replace [...] with your actual image features
 
 # Preprocess captions
-tokenizer = ...  # Use your favorite tokenizer (e.g., from keras.preprocessing.text)
-vocab_size = ...  # Define your vocabulary size
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(captions)
+vocab_size = len(tokenizer.word_index) + 1  # Add 1 for the padding token
 
 # Pad sequences to a fixed length
 max_sequence_length = max(len(seq) for seq in captions)
@@ -46,31 +82,11 @@ model.compile(loss='categorical_crossentropy', optimizer='adam')
 # Train the model
 model.fit([image_features, padded_captions], one_hot_captions, epochs=10, verbose=2)
 
-# For generating captions for a new image
-def generate_caption(photo):
-    # Convert image to features
-    photo = image.load_img(photo, target_size=(299, 299))
-    photo = image.img_to_array(photo)
-    photo = np.expand_dims(photo, axis=0)
-    photo = preprocess_input(photo)
-    # Get the image features
-    in_text = 'startseq'
-    for i in range(max_sequence_length):
-        sequence = tokenizer.texts_to_sequences([in_text])[0]
-        sequence = pad_sequences([sequence], maxlen=max_sequence_length)
-        yhat = model.predict([photo, sequence], verbose=0)
-        yhat = np.argmax(yhat)
-        word = word_for_id(yhat, tokenizer)
-        if word is None:
-            break
-        in_text += ' ' + word
-        if word == 'endseq':
-            break
-    return in_text
+# Save the trained model
+model.save(os.path.join(model_dir, "image_captioning_model.h5"))
 
-# Helper function to map an integer to a word
-def word_for_id(integer, tokenizer):
-    for word, index in tokenizer.word_index.items():
-        if index == integer:
-            return word
-    return None
+# Example of generating a caption for a new image
+new_photo_path = os.path.join(data_dir, "path/to/your/new/image.jpg")
+new_photo = load_and_preprocess_image(new_photo_path)
+generated_caption = generate_caption(model, tokenizer, new_photo)
+print("Generated Caption:", generated_caption)
