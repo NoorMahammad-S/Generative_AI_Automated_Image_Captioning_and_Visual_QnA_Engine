@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from PIL import Image
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.inception_v3 import InceptionV3, preprocess_input
 from tensorflow.keras.models import Model
