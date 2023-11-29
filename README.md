@@ -1,3 +1,5 @@
+# ```                AI Project                ```
+
 # Generative AI Automated Image Captioning and Visual QnA Engine
 
 ![Generated Image Caption](generated_image.jpg)
