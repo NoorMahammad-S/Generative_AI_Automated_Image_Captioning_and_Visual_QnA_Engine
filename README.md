@@ -1,6 +1,6 @@
-# Generative_AI_Automated_Image_Captioning_and_Visual_QnA_Engine
+# Generative AI Automated Image Captioning and Visual QnA Engine
 
-![Generated Image Caption](path/to/your/generated_image.jpg)
+![Generated Image Caption](generated_image.jpg)
 
 ## Overview
 
