@@ -49,4 +49,3 @@ new_photo = load_and_preprocess_image(new_photo_path)
 generated_caption = generate_caption(model, tokenizer, new_photo)
 print("Generated Caption:", generated_caption)
 ```
-
